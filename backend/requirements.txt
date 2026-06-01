@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standard]
+websockets
+opencv-python
+ultralytics
+paddlepaddle
+paddleocr
+byte-tracker
+torchreid
+numpy
+pillow
+python-multipart
