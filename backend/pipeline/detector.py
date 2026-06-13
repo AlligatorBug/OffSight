@@ -1,3 +1,8 @@
+# input: 1 video frame (a numpy array, a grid of pixel values)
+# output: a Detections object -> a list of bounding boxes with confidence scores 
+# step 1: find players!!
+# detector.py: YOLOv8 = pretrained model that can look at an image and draw boxes around every person it sees 
+
 from ultralytics import YOLO
 import supervision as sv
 import cv2

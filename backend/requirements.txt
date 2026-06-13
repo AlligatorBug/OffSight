@@ -5,7 +5,7 @@ opencv-python
 ultralytics
 paddlepaddle
 paddleocr
-byte-tracker
+supervision
 torchreid
 numpy
 pillow

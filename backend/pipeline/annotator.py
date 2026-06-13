@@ -1,3 +1,12 @@
+# annotator.py: runs all 4 steps for every frame and draws the results
+"""
+For every frame:
+detections = tracker.track(frame)           # Problem 1 + 2
+confirmed_numbers = ocr.process_frame(...)  # Problem 3
+matched_names = matcher.match_frame(...)    # Problem 4
+annotated_frame = annotator.annotate(...)   # Draw it all
+"""
+
 import cv2
 import numpy as np
 import supervision as sv

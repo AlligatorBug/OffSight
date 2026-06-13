@@ -1,3 +1,7 @@
+# ocr.py: what is their jersey number?
+# player crop -> zoom into torso region -> scale up to 2.5x -> sharpen -> convert to black and white -> PaddleOCR reads it -> "10"
+# uses majority voting, keeps a history of the last 30 reads for each tracker_id and picks the most common one
+
 import cv2
 import numpy as np
 from paddleocr import PaddleOCR
