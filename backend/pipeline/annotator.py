@@ -168,7 +168,8 @@ class PlayerAnnotator:
         output_path: str,
         tracker,
         ocr,
-        matcher
+        matcher,
+        reid
     ):
         """
         Full pipeline annotation on a complete video.
@@ -212,6 +213,18 @@ class PlayerAnnotator:
             # Step 2: OCR jersey numbers
             confirmed_numbers = ocr.process_frame(frame, detections)
 
+            # for players OCR failed on, try Re-ID
+            for i, (tracker_id, number) in enumerate(confirmed_numbers.items()):
+                x1, y1, x2, y2 = detections.xyxy[i].astype(int)
+                crop = frame[y1:y2, x1:x2]
+                embedding = reid.extract_features(crop)
+                if number is None:
+                    matched_id = reid.match(embedding)
+                    if matched_id is not None:
+                        confirmed_numbers[tracker_id] = confirmed_numbers[matched_id]
+                else:
+                    reid.update_gallery(tracker_id, embedding)
+
             # Step 3: match numbers to names
             matched_names = matcher.match_frame(confirmed_numbers)
 
@@ -231,10 +244,12 @@ if __name__ == "__main__":
     from tracker import PlayerTracker
     from ocr import JerseyOCR
     from matcher import PlayerMatcher
+    from reid import ReID
 
     tracker = PlayerTracker(model_path="yolov8x.pt", confidence=0.3)
     ocr     = JerseyOCR()
     matcher = PlayerMatcher()
+    reid = ReID()
 
     matcher.load_from_csv("../../data/squads/test_squad.csv")
 
@@ -245,5 +260,6 @@ if __name__ == "__main__":
         output_path="../../data/samples/match_clip_annotated.mp4",
         tracker=tracker,
         ocr=ocr,
-        matcher=matcher
+        matcher=matcher,
+        reid=reid
     )
