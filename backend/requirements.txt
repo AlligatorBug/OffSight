@@ -10,3 +10,5 @@ torchreid
 numpy
 pillow
 python-multipart
+gdown
+tensorboard
