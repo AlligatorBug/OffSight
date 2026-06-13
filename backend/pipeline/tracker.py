@@ -1,3 +1,9 @@
+# tracker.py: who is who across frames?
+# detection alone has a problem, each frame is processed independently :-(
+# ByteTrack solves this by watching how boxes move between frames
+# input = 1 video frame
+# output = same Detections object but now each one has a tracker_id attached
+
 import supervision as sv
 from detector import PlayerDetector
 
