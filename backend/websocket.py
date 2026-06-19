@@ -55,9 +55,15 @@ async def websocket_endpoint(websocket: WebSocket):
         reid     = ReID()
         annotator = PlayerAnnotator()
 
-        # load squad if provided
+        # load squad CSV if the frontend sent its content as a string
         if meta.get("squad_csv"):
-            matcher.load_from_csv(meta["squad_csv"])
+            with tempfile.NamedTemporaryFile(
+                mode="w", suffix=".csv", delete=False
+            ) as csv_tmp:
+                csv_tmp.write(meta["squad_csv"])
+                csv_tmp_path = csv_tmp.name
+            matcher.load_from_csv(csv_tmp_path)
+            os.remove(csv_tmp_path)
 
         await websocket.send_text(json.dumps({
             "status": "processing",
@@ -78,18 +84,21 @@ async def websocket_endpoint(websocket: WebSocket):
             output_path=output_path
         )
 
-        # 6. send done message
-        await websocket.send_text(json.dumps({
-            "status": "done",
-            "output_path": output_path
-        }))
+        # 6. send the annotated video bytes back to the frontend
+        with open(output_path, "rb") as f:
+            video_data = f.read()
+
+        await websocket.send_text(json.dumps({"status": "done"}))
+        await websocket.send_bytes(video_data)
 
     except WebSocketDisconnect:
         pass # client disconnected, clean exit
     finally:
-        # clean up temp files
+        # clean up both temp files
         if 'tmp_video_path' in locals() and os.path.exists(tmp_video_path):
             os.remove(tmp_video_path)
+        if 'output_path' in locals() and os.path.exists(output_path):
+            os.remove(output_path)
 
 
 async def process_video(websocket, tracker, ocr, matcher, reid, annotator, video_path, output_path):
@@ -127,8 +136,12 @@ async def process_video(websocket, tracker, ocr, matcher, reid, annotator, video
         confirmed_numbers = ocr.process_frame(frame, detections)
 
         # for players OCR failed on, try Re-ID
-        for i, (tracker_id, number) in enumerate(confirmed_numbers.items()):
-            x1, y1, x2, y2 = detections.xyxy[i].astype(int)
+        tracker_id_to_idx = {int(tid): idx for idx, tid in enumerate(detections.tracker_id)}
+        for tracker_id, number in confirmed_numbers.items():
+            idx = tracker_id_to_idx.get(tracker_id)
+            if idx is None:
+                continue
+            x1, y1, x2, y2 = detections.xyxy[idx].astype(int)
             crop = frame[y1:y2, x1:x2]
             embedding = reid.extract_features(crop)
             if number is None:

@@ -5,7 +5,7 @@
 # output = same Detections object but now each one has a tracker_id attached
 
 import supervision as sv
-from detector import PlayerDetector
+from .detector import PlayerDetector
 
 
 class PlayerTracker:
