@@ -45,6 +45,14 @@ class PlayerMatcher:
 
         print(f"Loaded {len(self.squad)} players from CSV.")
         print(self.squad)
+    
+    def load_from_dict(self, squad_list):
+        self.squad = {}
+        for player in squad_list:
+            number = int(player["number"])
+            name = str(player["name"]).strip()
+            self.squad[number] = name
+        print(f"Loaded {len(self.squad)} players from dict.")
 
     def load_from_api(self, home_team_id: int, away_team_id: int, api_key: str):
         """
