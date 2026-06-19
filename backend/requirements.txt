@@ -12,3 +12,7 @@ pillow
 python-multipart
 gdown
 tensorboard
+python-dotenv
+sqlalchemy
+psycopg2-binary
+requests
