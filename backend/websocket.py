@@ -122,6 +122,12 @@ async def process_video(websocket, tracker, ocr, matcher, reid, annotator, video
     fourcc = cv2.VideoWriter_fourcc(*"mp4v")
     out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
 
+    await websocket.send_text(json.dumps({
+        "status": "video_info",
+        "width": width,
+        "height": height
+    }))
+
     frame_num = 0
 
     while True:
