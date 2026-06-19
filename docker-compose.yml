@@ -3,7 +3,7 @@ version: '3.9'
 services:
   backend:
     build: ./backend
-    command: uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
+    command: uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload --ws-max-size 536870912
     volumes:
       - .:/app
     ports:

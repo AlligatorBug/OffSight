@@ -27,11 +27,7 @@ class PlayerTracker:
         self.tracker = sv.ByteTrack(lost_track_buffer=30)
 
         # Annotators
-        self.box_annotator = sv.BoxAnnotator(
-            thickness=2,
-            text_thickness=1,
-            text_scale=0.5
-        )
+        self.box_annotator = sv.BoxAnnotator(thickness=2)
         self.trace_annotator = sv.TraceAnnotator(
             thickness=2,
             trace_length=50     # draws a trail showing where the player has been

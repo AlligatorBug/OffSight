@@ -66,11 +66,7 @@ class PlayerDetector:
         out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
 
         # Set up the bounding box annotator from supervision
-        box_annotator = sv.BoxAnnotator(
-            thickness=2,
-            text_thickness=1,
-            text_scale=0.5
-        )
+        box_annotator = sv.BoxAnnotator(thickness=2)
 
         frame_num = 0
 

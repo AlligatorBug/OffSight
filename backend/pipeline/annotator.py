@@ -20,11 +20,7 @@ class PlayerAnnotator:
         produced by tracker, OCR, and matcher and draws it onto the frame.
         """
         # Bounding box drawing
-        self.box_annotator = sv.BoxAnnotator(
-            thickness=2,
-            text_thickness=1,
-            text_scale=0.5
-        )
+        self.box_annotator = sv.BoxAnnotator(thickness=2)
 
         # Movement trail behind each player
         self.trace_annotator = sv.TraceAnnotator(
@@ -140,7 +136,6 @@ class PlayerAnnotator:
         annotated = self.box_annotator.annotate(
             scene=annotated,
             detections=detections,
-            labels=[""] * len(detections)   # blank — we draw labels manually below
         )
 
         # Draw name labels above each bounding box

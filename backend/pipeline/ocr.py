@@ -15,9 +15,8 @@ class JerseyOCR:
         Uses English digit recognition in a lightweight mode.
         """
         self.ocr = PaddleOCR(
-            use_angle_cls=True,     # handles rotated/angled numbers
+            use_angle_cls=True,
             lang="en",
-            show_log=False          # suppress verbose PaddleOCR logs
         )
 
         # Stores a history of jersey number reads per tracker_id
@@ -78,24 +77,40 @@ class JerseyOCR:
         """
         torso = self.preprocess_crop(crop)
 
-        results = self.ocr.ocr(torso, cls=True)
+        results = self.ocr.ocr(torso)
 
-        if not results or not results[0]:
+        if not results:
             return None
 
-        for line in results[0]:
-            text = line[1][0].strip()
-            confidence = line[1][1]
+        lines = results[0] if isinstance(results[0], list) else results
+        if not lines:
+            return None
 
-            # Only accept high confidence reads
+        for line in lines:
+            try:
+                if isinstance(line, dict):
+                    text = str(line.get('rec_text') or line.get('transcription') or '').strip()
+                    confidence = float(line.get('rec_score') or line.get('confidence') or 1.0)
+                elif isinstance(line, (list, tuple)):
+                    second = line[1]
+                    if isinstance(second, (list, tuple)):
+                        text = str(second[0]).strip()
+                        confidence = float(second[1])
+                    elif isinstance(second, str):
+                        text = second.strip()
+                        confidence = 1.0
+                    else:
+                        continue
+                else:
+                    continue
+            except (IndexError, KeyError, TypeError, ValueError):
+                continue
+
             if confidence < 0.7:
                 continue
 
-            # Only accept pure digit results — jersey numbers are numbers only
             if text.isdigit():
                 number = int(text)
-
-                # Jersey numbers are between 1 and 99
                 if 1 <= number <= 99:
                     return number
 

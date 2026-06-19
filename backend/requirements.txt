@@ -15,4 +15,5 @@ tensorboard
 python-dotenv
 sqlalchemy
 psycopg2-binary
+asyncpg
 requests

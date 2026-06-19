@@ -40,7 +40,7 @@ class FootballAPI:
             for item in data.get("response", [])
         ]
 
-    def get_team_fixtures(self, team_id: int, season: int = 2026) -> list[dict]:
+    def get_team_fixtures(self, team_id: int, season: int = 2024) -> list[dict]:
         data = self._get("/fixtures", {"team": team_id, "season": season})
         fixtures = [
             {
