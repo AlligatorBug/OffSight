@@ -55,8 +55,12 @@ async def websocket_endpoint(websocket: WebSocket):
         reid     = ReID()
         annotator = PlayerAnnotator()
 
-        # load squad CSV if the frontend sent its content as a string
-        if meta.get("squad_csv"):
+        # loading squad 
+        if meta.get("fixture_id"):
+            raise NotImplementedError("fixture_id support coming soon") # wait for tevyn
+        elif meta.get("squad"):
+            matcher.load_from_dict(meta.get("squad"))
+        elif meta.get("squad_csv"):
             with tempfile.NamedTemporaryFile(
                 mode="w", suffix=".csv", delete=False
             ) as csv_tmp:
@@ -136,12 +140,8 @@ async def process_video(websocket, tracker, ocr, matcher, reid, annotator, video
         confirmed_numbers = ocr.process_frame(frame, detections)
 
         # for players OCR failed on, try Re-ID
-        tracker_id_to_idx = {int(tid): idx for idx, tid in enumerate(detections.tracker_id)}
-        for tracker_id, number in confirmed_numbers.items():
-            idx = tracker_id_to_idx.get(tracker_id)
-            if idx is None:
-                continue
-            x1, y1, x2, y2 = detections.xyxy[idx].astype(int)
+        for i, (tracker_id, number) in enumerate(confirmed_numbers.items()):
+            x1, y1, x2, y2 = detections.xyxy[i].astype(int)
             crop = frame[y1:y2, x1:x2]
             embedding = reid.extract_features(crop)
             if number is None:
