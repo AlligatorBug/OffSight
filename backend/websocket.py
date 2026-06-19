@@ -16,6 +16,8 @@ from backend.pipeline.matcher import PlayerMatcher
 from backend.pipeline.reid import ReID
 from backend.pipeline.annotator import PlayerAnnotator
 
+from backend.services.football_api import FootballAPI
+
 router = APIRouter()
 
 
@@ -57,7 +59,10 @@ async def websocket_endpoint(websocket: WebSocket):
 
         # loading squad 
         if meta.get("fixture_id"):
-            raise NotImplementedError("fixture_id support coming soon") # wait for tevyn
+            key = os.environ.get("API_FOOTBALL_KEY")
+            api = FootballAPI(key)
+            players = api.get_fixture_lineups(meta["fixture_id"])
+            matcher.load_from_dict(players)
         elif meta.get("squad"):
             matcher.load_from_dict(meta.get("squad"))
         elif meta.get("squad_csv"):
@@ -125,11 +130,6 @@ async def process_video(websocket, tracker, ocr, matcher, reid, annotator, video
             break
 
         frame_num += 1
-        await websocket.send_text(json.dumps({
-            "status": "processing",
-            "frame": frame_num,
-            "total": total
-        }))
 
         await asyncio.sleep(0)
 
@@ -140,8 +140,12 @@ async def process_video(websocket, tracker, ocr, matcher, reid, annotator, video
         confirmed_numbers = ocr.process_frame(frame, detections)
 
         # for players OCR failed on, try Re-ID
-        for i, (tracker_id, number) in enumerate(confirmed_numbers.items()):
-            x1, y1, x2, y2 = detections.xyxy[i].astype(int)
+        tracker_id_to_idx = {int(tid): idx for idx, tid in enumerate(detections.tracker_id)}
+        for tracker_id, number in confirmed_numbers.items():
+            idx = tracker_id_to_idx.get(tracker_id)
+            if idx is None:
+                continue
+            x1, y1, x2, y2 = detections.xyxy[idx].astype(int)
             crop = frame[y1:y2, x1:x2]
             embedding = reid.extract_features(crop)
             if number is None:
@@ -153,6 +157,33 @@ async def process_video(websocket, tracker, ocr, matcher, reid, annotator, video
 
         # Step 3: match numbers to names
         matched_names = matcher.match_frame(confirmed_numbers)
+
+        websocket_message =[]
+        for i, tracker_id in enumerate(detections.tracker_id):
+            name = matched_names.get(tracker_id)
+            number = confirmed_numbers.get(tracker_id)
+            label = None
+
+            if name:
+                label = name
+            elif number:
+                label = f"#{number}"
+            else:
+                label = f"ID {tracker_id}"
+
+            bbox = detections.xyxy[i].tolist()
+            websocket_message.append({
+                "tracker_id": int(tracker_id),
+                "bbox": bbox,
+                "label": label
+            })
+
+        await websocket.send_text(json.dumps({
+            "status": "processing",
+            "frame": frame_num,
+            "total": total,
+            "detections": websocket_message
+        }))
 
         # Step 4: annotate and write frame
         annotated_frame = annotator.annotate(
