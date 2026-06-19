@@ -11,6 +11,8 @@ build/
 # Models / weights
 backend/models/weights/*.pt
 backend/models/weights/*.pth
+*.pt
+*.pth
 
 # Data
 data/samples/
