@@ -20,6 +20,12 @@ from backend.services.football_api import FootballAPI
 
 router = APIRouter()
 
+# Load heavy ML models once at startup — not per-connection
+_tracker  = PlayerTracker(model_path="yolov8x.pt", confidence=0.3)
+_ocr      = JerseyOCR()
+_reid     = ReID()
+_annotator = PlayerAnnotator()
+
 
 @router.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
@@ -50,12 +56,12 @@ async def websocket_endpoint(websocket: WebSocket):
             tmp.write(video_bytes)
             tmp_video_path = tmp.name
 
-        # 4. initialise pipeline 
-        tracker  = PlayerTracker(model_path="yolov8x.pt", confidence=0.3)
-        ocr      = JerseyOCR()
-        matcher  = PlayerMatcher()
-        reid     = ReID()
-        annotator = PlayerAnnotator()
+        # 4. per-connection objects (stateful, must be fresh each session)
+        tracker   = _tracker
+        ocr       = _ocr
+        reid      = ReID()   # has per-session gallery state
+        matcher   = PlayerMatcher()
+        annotator = _annotator
 
         # loading squad 
         if meta.get("fixture_id"):
@@ -80,7 +86,7 @@ async def websocket_endpoint(websocket: WebSocket):
         }))
 
         # 5. process the video
-        output_path = tmp_video_path.replace(".mp4", "_annotated.mp4")
+        output_path = os.path.splitext(tmp_video_path)[0] + "_annotated.mp4"
 
         await process_video(
             websocket=websocket,
