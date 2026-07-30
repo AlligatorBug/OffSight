@@ -1,0 +1,10 @@
+frontend
+notebooks
+train
+.git
+*.pt
+*.pth
+*.onnx
+__pycache__
+*.pyc
+.env
